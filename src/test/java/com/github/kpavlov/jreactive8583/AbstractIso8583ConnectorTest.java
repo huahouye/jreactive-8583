@@ -1,25 +1,22 @@
 package com.github.kpavlov.jreactive8583;
 
+import com.github.kpavlov.jreactive8583.iso.MessageFactory;
 import com.github.kpavlov.jreactive8583.netty.pipeline.CompositeIsoMessageHandler;
 import com.solab.iso8583.IsoMessage;
-import com.solab.iso8583.MessageFactory;
-import io.netty.bootstrap.AbstractBootstrap;
+import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelHandlerContext;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class AbstractIso8583ConnectorTest<M extends IsoMessage> {
 
-    private AbstractIso8583Connector<ConnectorConfiguration, AbstractBootstrap, M> subject;
+    private AbstractIso8583Connector<ConnectorConfiguration, ServerBootstrap, M> subject;
 
     @Mock
     private ConnectorConfiguration config;
@@ -34,14 +31,14 @@ public class AbstractIso8583ConnectorTest<M extends IsoMessage> {
     @Mock
     private M message;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         compositeIsoMessageHandler = new CompositeIsoMessageHandler<>();
-        subject = new AbstractIso8583Connector<ConnectorConfiguration, AbstractBootstrap, M>(
+        subject = new AbstractIso8583Connector<>(
                 config, messageFactory, compositeIsoMessageHandler
         ) {
             @Override
-            protected AbstractBootstrap createBootstrap() {
+            protected ServerBootstrap createBootstrap() {
                 throw new UnsupportedOperationException("Method is not implemented: .createBootstrap");
             }
         };
@@ -50,7 +47,7 @@ public class AbstractIso8583ConnectorTest<M extends IsoMessage> {
     @Test
     public void addMessageListener() throws Exception {
         //given
-        @SuppressWarnings("unchecked") IsoMessageListener<M> listener = mock(IsoMessageListener.class);
+        @SuppressWarnings("unchecked") final IsoMessageListener<M> listener = mock(IsoMessageListener.class);
         when(listener.applies(message)).thenReturn(true);
 
         //when
@@ -65,14 +62,14 @@ public class AbstractIso8583ConnectorTest<M extends IsoMessage> {
     public void removeMessageListener() throws Exception {
         //given
         subject.addMessageListener(listener);
-        @SuppressWarnings("unchecked") IsoMessageListener<M> listener = mock(IsoMessageListener.class);
+        @SuppressWarnings("unchecked") final IsoMessageListener<M> listener = mock(IsoMessageListener.class);
 
         //when
         subject.removeMessageListener(listener);
         compositeIsoMessageHandler.channelRead(ctx, message);
 
         // then
-        verifyZeroInteractions(listener);
+        verifyNoInteractions(listener);
     }
 
 }

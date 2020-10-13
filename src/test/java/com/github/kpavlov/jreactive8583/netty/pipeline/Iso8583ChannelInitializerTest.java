@@ -2,34 +2,29 @@ package com.github.kpavlov.jreactive8583.netty.pipeline;
 
 import com.github.kpavlov.jreactive8583.ConnectorConfiguration;
 import com.github.kpavlov.jreactive8583.ConnectorConfigurer;
+import com.github.kpavlov.jreactive8583.iso.MessageFactory;
 import com.github.kpavlov.jreactive8583.server.ServerConfiguration;
-import com.solab.iso8583.MessageFactory;
+import com.solab.iso8583.IsoMessage;
 import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class Iso8583ChannelInitializerTest {
 
     @Mock
     private EventLoopGroup workerGroup;
     @Mock
-    private MessageFactory<com.solab.iso8583.IsoMessage> messageFactory;
+    private MessageFactory<IsoMessage> messageFactory;
     @Mock
     private ChannelHandler handlers;
     @Mock
@@ -39,7 +34,7 @@ public class Iso8583ChannelInitializerTest {
     private ConnectorConfigurer configurer;
     private ServerConfiguration.Builder configurationBuilder;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         configurationBuilder = ServerConfiguration.newBuilder();
         configurer = new ConnectorConfigurer() {
@@ -51,8 +46,8 @@ public class Iso8583ChannelInitializerTest {
     @Test
     public void testInitChannelWithLogger() {
         //given
-        configurationBuilder.withAddLoggingHandler(true);
-        Iso8583ChannelInitializer<Channel, AbstractBootstrap, ConnectorConfiguration> channelInitializer = createChannelInitializer(configurer);
+        configurationBuilder.addLoggingHandler(true);
+        final var channelInitializer = createChannelInitializer(configurer);
 
         // when
         channelInitializer.initChannel(channel);
@@ -64,9 +59,9 @@ public class Iso8583ChannelInitializerTest {
     @Test
     public void testInitChannelWithoutLogger() {
         //given
-        configurationBuilder.withAddLoggingHandler(false);
+        configurationBuilder.addLoggingHandler(false);
 
-        Iso8583ChannelInitializer<Channel, AbstractBootstrap, ConnectorConfiguration> channelInitializer = createChannelInitializer(configurer);
+        final var channelInitializer = createChannelInitializer(configurer);
 
         //when
         channelInitializer.initChannel(channel);
@@ -75,12 +70,25 @@ public class Iso8583ChannelInitializerTest {
         verify(pipeline, never()).addLast(any(EventLoopGroup.class), anyString(), any(IsoMessageLoggingHandler.class));
     }
 
-    private Iso8583ChannelInitializer<Channel, AbstractBootstrap, ConnectorConfiguration> createChannelInitializer(ConnectorConfigurer<ConnectorConfiguration, AbstractBootstrap> configurer) {
-        return new Iso8583ChannelInitializer<>(
-                configurationBuilder.build(),
-                configurer,
-                workerGroup,
-                messageFactory,
-                handlers);
+    @Test
+    public void testInitChannelWithDefaultLoggingSetting() {
+        //given
+        final var channelInitializer = createChannelInitializer(configurer);
+
+        //when
+        channelInitializer.initChannel(channel);
+
+        //then
+        verify(pipeline, never())
+            .addLast(any(EventLoopGroup.class), anyString(), any(IsoMessageLoggingHandler.class));
+    }
+
+    private Iso8583ChannelInitializer<Channel, AbstractBootstrap<?, ?>, ConnectorConfiguration> createChannelInitializer(final ConnectorConfigurer<ConnectorConfiguration, AbstractBootstrap<?, ?>> configurer) {
+        return new Iso8583ChannelInitializer(
+            configurationBuilder.build(),
+            configurer,
+            workerGroup,
+            messageFactory,
+            handlers);
     }
 }

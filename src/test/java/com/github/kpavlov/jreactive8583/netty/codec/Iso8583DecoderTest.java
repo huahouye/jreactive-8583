@@ -1,44 +1,45 @@
 package com.github.kpavlov.jreactive8583.netty.codec;
 
-import com.solab.iso8583.MessageFactory;
+import com.github.kpavlov.jreactive8583.iso.MessageFactory;
+import com.solab.iso8583.IsoMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class Iso8583DecoderTest {
 
     private Iso8583Decoder decoder;
 
     @Mock
-    private MessageFactory messageFactory;
+    private MessageFactory<IsoMessage> messageFactory;
     @Mock
-    private List out;
+    private List<Object> out;
     @Mock
     private ByteBuf byteBuf;
     @Mock
     private ChannelHandlerContext ctx;
 
-    @Before
+    @BeforeEach
     public void beforeClass() {
         decoder = new Iso8583Decoder(messageFactory);
     }
 
     @Test
-    public void testDecodeEmptyBypeBufDoesNothing() throws Exception {
+    public void testDecodeEmptyByteBufDoesNothing() throws Exception {
         when(byteBuf.isReadable()).thenReturn(false);
 
         decoder.decode(ctx, byteBuf, out);
 
-        verifyZeroInteractions(ctx, out, messageFactory);
+        verifyNoInteractions(ctx, out, messageFactory);
     }
 }
